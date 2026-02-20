@@ -303,10 +303,38 @@ func (b *EventTicketBuilder) SetGroupInfo(groupInfo1, groupInfo2, groupInfo3 str
 	return b
 }
 
-// SetProviderViewLink configures the provider view link JSON payload
+// ProviderViewLinkInfo represents a single link entry in providerViewLink
+type ProviderViewLinkInfo struct {
+	Link string `json:"link"`
+	Type string `json:"type"`
+	Text string `json:"text"`
+}
+
+// SetProviderViewLink configures the provider view link as a JSON payload
+// Samsung Wallet requires providerViewLink in the format:
+// {"count":N,"info":[{"link":"...","type":"web","text":"..."}]}
 func (b *EventTicketBuilder) SetProviderViewLink(link string) *EventTicketBuilder {
 	if link != "" {
-		b.attributes.ProviderViewLink = link
+		b.SetProviderViewLinkFromStruct([]ProviderViewLinkInfo{
+			{Link: link, Type: "web", Text: "View Details"},
+		})
+	}
+	return b
+}
+
+// SetProviderViewLinkFromStruct configures the provider view link from structs
+func (b *EventTicketBuilder) SetProviderViewLinkFromStruct(links []ProviderViewLinkInfo) *EventTicketBuilder {
+	if len(links) > 0 {
+		payload := struct {
+			Count int                    `json:"count"`
+			Info  []ProviderViewLinkInfo `json:"info"`
+		}{
+			Count: len(links),
+			Info:  links,
+		}
+		if jsonData, err := json.Marshal(payload); err == nil {
+			b.attributes.ProviderViewLink = string(jsonData)
+		}
 	}
 	return b
 }
